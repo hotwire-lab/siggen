@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://hotwire-lab.github.io/siggen/sitemap.xml

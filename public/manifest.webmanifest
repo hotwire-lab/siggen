@@ -1,0 +1,20 @@
+{
+  "name": "HotWire Signal Generator — Dual-Ch DDS, PWM & Pattern Gen",
+  "short_name": "HotWire Gen",
+  "description": "Dual-channel DDS waveform, hardware PWM (up to 20 MHz), frequency sweep, and 4-channel digital pattern generator PWA for Seeed Studio XIAO ESP32-S3 and XIAO ESP32-C6.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0e12",
+  "theme_color": "#0b0e12",
+  "categories": ["developer", "utilities"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

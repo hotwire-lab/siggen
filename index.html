@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0e12" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>HotWire Signal Generator — Dual-Ch DDS, PWM, Sweep &amp; Pattern Gen (XIAO ESP32-S3 / C6)</title>
+    <meta
+      name="description"
+      content="Zero-install browser Dual-Channel Signal Generator PWA for Seeed Studio XIAO ESP32-S3 and XIAO ESP32-C6 via Web Serial &amp; WebUSB. Sine/Square/Triangle/Saw/PWM up to 20 MHz, frequency sweep, and 4-ch digital pattern generator."
+    />
+    <meta name="author" content="Kari Vierimaa, Kempele" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://hotwire-lab.github.io/siggen/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="HotWire Signal Generator" />
+    <meta property="og:url" content="https://hotwire-lab.github.io/siggen/" />
+    <meta property="og:title" content="HotWire Signal Generator — Dual-Ch DDS, PWM &amp; Pattern Gen" />
+    <meta
+      property="og:description"
+      content="Turn a $5 XIAO ESP32-S3 or C6 into a dual-channel function, PWM (up to 20 MHz), frequency sweep, and 4-channel digital pattern generator directly from your browser."
+    />
+
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+
+    <link data-trunk rel="css" href="styles.css" />
+    <link data-trunk rel="copy-dir" href="public/firmware" />
+    <link data-trunk rel="copy-file" href="public/icon.svg" />
+    <link data-trunk rel="copy-file" href="public/manifest.webmanifest" />
+    <link data-trunk rel="copy-file" href="public/robots.txt" />
+    <link data-trunk rel="copy-file" href="public/sitemap.xml" />
+    <link data-trunk rel="copy-file" href="public/sw.js" />
+    <link data-trunk rel="copy-file" href="public/.nojekyll" />
+    <link data-trunk rel="rust" />
+  </head>
+  <body>
+    <script>
+      if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(() => {});
+        });
+      }
+    </script>
+  </body>
+</html>
