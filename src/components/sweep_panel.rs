@@ -30,7 +30,7 @@ pub fn SweepPanel(
                         {move || {
                             let st = status.get();
                             if st.sweep_active {
-                                format!("Live: {}", format_freq_hz(st.sweep_freq_mhz as f64 / 1000.0))
+                                format!("Live: {}", format_freq_hz(st.sweep_freq_dhz as f64 / 10.0))
                             } else {
                                 "Idle".to_string()
                             }

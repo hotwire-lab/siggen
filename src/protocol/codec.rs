@@ -6,7 +6,9 @@ use crate::protocol::types::{
 };
 
 pub fn build_ch_cfg_frame(ch: u8, cfg: &ChannelConfig) -> Vec<u8> {
-    let freq_mhz = (cfg.clamped_freq_hz() * 1000.0).round().clamp(100.0, u32::MAX as f64) as u32;
+    // The wire format uses decihertz so both 0.1 Hz DDS resolution and the
+    // full 20 MHz LEDC range fit in a single u32 (20 MHz = 200_000_000 dHz).
+    let freq_dhz = (cfg.clamped_freq_hz() * 10.0).round().clamp(1.0, u32::MAX as f64) as u32;
     let duty = cfg.duty_permille.clamp(5, 995);
     let amp = cfg.amp_mv.min(3300);
     let offset = cfg.offset_mv.min(3300);
@@ -16,7 +18,7 @@ pub fn build_ch_cfg_frame(ch: u8, cfg: &ChannelConfig) -> Vec<u8> {
     payload[0] = ch & 0x01;
     payload[1] = u8::from(cfg.enabled);
     payload[2] = cfg.waveform as u8;
-    payload[3..7].copy_from_slice(&freq_mhz.to_le_bytes());
+    payload[3..7].copy_from_slice(&freq_dhz.to_le_bytes());
     payload[7..9].copy_from_slice(&duty.to_le_bytes());
     payload[9..11].copy_from_slice(&amp.to_le_bytes());
     payload[11..13].copy_from_slice(&offset.to_le_bytes());
@@ -64,6 +66,22 @@ mod tests {
         assert_eq!(frame[2], CMD_SIGGEN_CH_CFG);
         assert_eq!(u16::from_le_bytes([frame[3], frame[4]]), 15);
         assert_eq!(frame.len(), 6 + 15);
+    }
+
+    #[test]
+    fn encodes_full_ledc_frequency_range_in_decihertz() {
+        let mut cfg = ChannelConfig::default_ch1();
+        cfg.waveform = Waveform::Square;
+        cfg.freq_hz = 20_000_000.0;
+        let frame = build_ch_cfg_frame(0, &cfg);
+        let freq_dhz = u32::from_le_bytes([frame[8], frame[9], frame[10], frame[11]]);
+        assert_eq!(freq_dhz, 200_000_000);
+
+        cfg.waveform = Waveform::Sine;
+        cfg.freq_hz = 0.1;
+        let frame = build_ch_cfg_frame(0, &cfg);
+        let freq_dhz = u32::from_le_bytes([frame[8], frame[9], frame[10], frame[11]]);
+        assert_eq!(freq_dhz, 1);
     }
 
     #[test]

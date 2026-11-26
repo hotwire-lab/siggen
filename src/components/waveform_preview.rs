@@ -137,8 +137,8 @@ pub fn WaveformPreview(
         }
 
         // Choose reference time window = 3 cycles of CH1 (or CH2 if CH1 disabled)
-        let eff_c1_hz = if st.sweep_active && st.sweep_freq_mhz > 0 {
-            st.sweep_freq_mhz as f64 / 1000.0
+        let eff_c1_hz = if st.sweep_active && st.sweep_freq_dhz > 0 {
+            st.sweep_freq_dhz as f64 / 10.0
         } else {
             c1.clamped_freq_hz()
         };

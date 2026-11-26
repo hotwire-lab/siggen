@@ -225,8 +225,8 @@ pub struct SigGenStatus {
     pub ch_mask: u8,
     pub sweep_active: bool,
     pub pattern_active: bool,
-    pub sweep_freq_mhz: u32,
-    pub actual_ch1_mhz: u32,
+    pub sweep_freq_dhz: u32,
+    pub actual_ch1_dhz: u32,
 }
 
 #[derive(Debug, Clone)]

@@ -42,13 +42,13 @@ impl ProtocolDemuxer {
                     ch_mask: raw.payload[1],
                     sweep_active: raw.payload[2] != 0,
                     pattern_active: raw.payload[3] != 0,
-                    sweep_freq_mhz: u32::from_le_bytes([
+                    sweep_freq_dhz: u32::from_le_bytes([
                         raw.payload[4],
                         raw.payload[5],
                         raw.payload[6],
                         raw.payload[7],
                     ]),
-                    actual_ch1_mhz: u32::from_le_bytes([
+                    actual_ch1_dhz: u32::from_le_bytes([
                         raw.payload[8],
                         raw.payload[9],
                         raw.payload[10],
@@ -100,6 +100,6 @@ mod tests {
         let s = got_status.expect("status");
         assert!(s.master_enabled);
         assert_eq!(s.ch_mask, 0x03);
-        assert_eq!(s.sweep_freq_mhz, 1_500_000);
+        assert_eq!(s.sweep_freq_dhz, 1_500_000);
     }
 }

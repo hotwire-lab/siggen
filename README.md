@@ -4,12 +4,12 @@ Dual-channel DDS waveform, hardware LEDC Square/PWM (up to 20 MHz), frequency sw
 
 * **Live App:** https://hotwire-lab.github.io/siggen/
 * **Suite Home:** https://hotwire-lab.github.io/
-* **Stack:** Rust + WebAssembly (Leptos 0.7 CSR + Trunk + `hotwire-core v0.5.0`)
+* **Stack:** Rust + WebAssembly (Leptos 0.7 CSR + Trunk + `hotwire-core v0.5.1`)
 
 ## Features
 
 * **Dual-Channel Outputs (`D0` & `D1`):**
-  * **Hardware LEDC Square & Variable-Duty PWM:** 1 Hz to 20 MHz square wave and 0.5%–99.5% variable-duty PWM with automatic timer resolution selection and zero CPU jitter.
+  * **Hardware LEDC Square & Variable-Duty PWM:** 1 Hz to 20 MHz square wave and 0.5%-99.5% variable-duty PWM with automatic timer resolution selection and zero CPU jitter. Duty resolution is resolution-limited at the top of the range (e.g. 1-bit/50% only at 20 MHz, 2-bit at 10 MHz), matching the ESP32 LEDC clock divider.
   * **PWM-DAC DDS Waveforms (`0.1 Hz`–`5 kHz`):** Sine, Triangle, Sawtooth, Reverse Sawtooth, DC Level, and White Noise modulated on a 312.5 kHz 8-bit PWM carrier. Add a simple external RC low-pass filter (e.g. `1 kΩ + 10 nF`, `fc ≈ 16 kHz`) for smooth analog voltage output (`0–3.3 V`). CH2 supports `0°–359°` phase offset relative to CH1.
 * **CH1 Frequency Sweep:** Linear loop, Logarithmic loop, and One-Shot Linear sweep (`100 ms`–`30 s`) with live frequency telemetry.
 * **4-Channel Digital Pattern Generator (`D2`–`D5`):** Programmable 16-step bit grid (`1 Hz`–`20 kHz`) with 4-bit Counter, Quadrature A/B + Index, Walking 1s, and SPI `0xA5` Burst presets.

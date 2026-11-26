@@ -35,7 +35,7 @@
   #error "This sketch targets Seeed Studio XIAO ESP32-S3."
 #endif
 
-#define HOTWIRE_FW_VERSION "1.0.0-siggen"
+#define HOTWIRE_FW_VERSION "1.1.0-siggen"
 #define HOTWIRE_BOARD_NAME "XIAO-ESP32-S3"
 
 static const int CH_PINS[2]  = { 1, 2 };           // D0, D1
@@ -71,7 +71,7 @@ static const uint32_t DDS_CARRIER_HZ     = 312500; // 80 MHz / 256
 struct ChannelCfg {
   bool     enabled;
   uint8_t  waveform;
-  uint32_t freq_mhz;      // millihertz (1000 = 1.000 Hz)
+  uint32_t freq_dhz;      // decihertz (10 = 1.0 Hz, 200000000 = 20 MHz)
   uint16_t duty_permille; // 5..995 (500 = 50.0%)
   uint16_t amp_mv;        // 0..3300 mVpp
   uint16_t offset_mv;     // 0..3300 mV center
@@ -85,7 +85,7 @@ struct SweepCfg {
   uint32_t stop_hz;
   uint32_t duration_ms;
   uint32_t start_ms;
-  uint32_t current_mhz;
+  uint32_t current_dhz;
   bool     finished;
 };
 
@@ -99,15 +99,15 @@ struct PatternCfg {
 
 static bool       g_master_en = false;
 static ChannelCfg g_ch[2] = {
-  { true,  WAVE_SINE,   1000000, 500, 3000, 1650, 0 },
-  { false, WAVE_SQUARE, 1000000, 500, 3000, 1650, 90 }
+  { true,  WAVE_SINE,   10000, 500, 3000, 1650, 0 },
+  { false, WAVE_SQUARE, 10000, 500, 3000, 1650, 90 }
 };
-static SweepCfg   g_sweep = { false, 0, 100, 2000, 3000, 0, 100000, false };
+static SweepCfg   g_sweep = { false, 0, 100, 2000, 3000, 0, 1000, false };
 static PatternCfg g_pat   = { false, 8, 1000, {0,1,2,3,4,5,6,7,0,0,0,0,0,0,0,0}, 0 };
 
 static bool     g_ch_is_dds[2] = { false, false };
 static bool     g_ch_hw_active[2] = { false, false };
-static uint32_t g_ch_actual_mhz[2] = { 1000000, 1000000 };
+static uint32_t g_ch_actual_dhz[2] = { 10000, 10000 };
 static uint32_t g_dds_phase_acc[2] = { 0, 0 };
 static uint32_t g_dds_phase_inc[2] = { 0, 0 };
 static uint32_t g_prng_state = 0x12345678u;
@@ -170,8 +170,8 @@ static void send_capabilities() {
 static void send_status() {
   uint8_t payload[12];
   uint8_t ch_mask = 0;
-  uint32_t sweep_mhz = 0;
-  uint32_t ch1_mhz = 0;
+  uint32_t sweep_dhz = 0;
+  uint32_t ch1_dhz = 0;
   bool master = false;
   bool sw_active = false;
   bool pat_active = false;
@@ -182,16 +182,16 @@ static void send_status() {
   if (g_ch[1].enabled) ch_mask |= 0x02;
   sw_active = g_master_en && g_ch[0].enabled && g_sweep.enabled && !g_sweep.finished;
   pat_active = g_master_en && g_pat.enabled;
-  sweep_mhz = sw_active ? g_sweep.current_mhz : g_ch_actual_mhz[0];
-  ch1_mhz = g_ch_actual_mhz[0];
+  sweep_dhz = sw_active ? g_sweep.current_dhz : g_ch_actual_dhz[0];
+  ch1_dhz = g_ch_actual_dhz[0];
   if (g_state_mutex) xSemaphoreGive(g_state_mutex);
 
   payload[0] = master ? 1 : 0;
   payload[1] = ch_mask;
   payload[2] = sw_active ? 1 : 0;
   payload[3] = pat_active ? 1 : 0;
-  memcpy(&payload[4], &sweep_mhz, 4);
-  memcpy(&payload[8], &ch1_mhz, 4);
+  memcpy(&payload[4], &sweep_dhz, 4);
+  memcpy(&payload[8], &ch1_dhz, 4);
   send_frame(TYPE_SIGGEN_STATUS, payload, sizeof(payload));
 }
 
@@ -210,9 +210,9 @@ static ledc_timer_bit_t choose_ledc_bits(uint32_t freq_hz) {
   return LEDC_TIMER_1_BIT;
 }
 
-static uint32_t calc_dds_phase_inc(uint32_t freq_mhz) {
+static uint32_t calc_dds_phase_inc(uint32_t freq_dhz) {
   // phase_inc = (freq_hz / DDS_SAMPLE_RATE_HZ) * 2^32
-  uint64_t num = ((uint64_t)freq_mhz << 32) / 1000ULL;
+  uint64_t num = ((uint64_t)freq_dhz << 32) / 10ULL;
   return (uint32_t)(num / DDS_SAMPLE_RATE_HZ);
 }
 
@@ -227,7 +227,7 @@ static void stop_channel_hw(int ch) {
   digitalWrite(CH_PINS[ch], LOW);
 }
 
-static void apply_channel_hw_locked(int ch, uint32_t override_freq_mhz) {
+static void apply_channel_hw_locked(int ch, uint32_t override_freq_dhz) {
   ChannelCfg& c = g_ch[ch];
   ledc_timer_t ltimer = (ch == 0) ? LEDC_TIMER_0 : LEDC_TIMER_1;
   ledc_channel_t lch  = (ch == 0) ? LEDC_CHANNEL_0 : LEDC_CHANNEL_1;
@@ -237,10 +237,10 @@ static void apply_channel_hw_locked(int ch, uint32_t override_freq_mhz) {
     return;
   }
 
-  uint32_t eff_mhz = (override_freq_mhz > 0) ? override_freq_mhz : c.freq_mhz;
+  uint32_t eff_dhz = (override_freq_dhz > 0) ? override_freq_dhz : c.freq_dhz;
 
   if (waveform_uses_hw_ledc(c.waveform)) {
-    uint32_t freq_hz = max<uint32_t>(1, min<uint32_t>(20000000, (eff_mhz + 500) / 1000));
+    uint32_t freq_hz = max<uint32_t>(1, min<uint32_t>(20000000, (eff_dhz + 5u) / 10u));
     ledc_timer_bit_t bits = choose_ledc_bits(freq_hz);
     uint32_t max_duty = (1u << bits);
     uint16_t duty_pm = (c.waveform == WAVE_SQUARE) ? 500 : constrain(c.duty_permille, 5, 995);
@@ -272,10 +272,10 @@ static void apply_channel_hw_locked(int ch, uint32_t override_freq_mhz) {
 
     g_ch_is_dds[ch] = false;
     g_ch_hw_active[ch] = true;
-    g_ch_actual_mhz[ch] = freq_hz * 1000u;
+    g_ch_actual_dhz[ch] = freq_hz * 10u;
   } else {
     // DDS PWM-DAC mode: 8-bit 312.5 kHz carrier
-    uint32_t clamped_mhz = constrain(eff_mhz, 100u, 5000000u); // 0.1 Hz .. 5 kHz
+    uint32_t clamped_dhz = constrain(eff_dhz, 1u, 50000u); // 0.1 Hz .. 5 kHz
     if (!g_ch_is_dds[ch] || !g_ch_hw_active[ch]) {
       ledc_timer_config_t tcfg = {};
       tcfg.speed_mode = LEDC_LOW_SPEED_MODE;
@@ -294,14 +294,14 @@ static void apply_channel_hw_locked(int ch, uint32_t override_freq_mhz) {
       ccfg.hpoint = 0;
       ledc_channel_config(&ccfg);
     }
-    g_dds_phase_inc[ch] = calc_dds_phase_inc(clamped_mhz);
+    g_dds_phase_inc[ch] = calc_dds_phase_inc(clamped_dhz);
     if (ch == 1) {
       uint32_t offset_acc = (uint32_t)(((uint64_t)(c.phase_deg % 360) << 32) / 360ULL);
       g_dds_phase_acc[1] = g_dds_phase_acc[0] + offset_acc;
     }
     g_ch_is_dds[ch] = true;
     g_ch_hw_active[ch] = true;
-    g_ch_actual_mhz[ch] = clamped_mhz;
+    g_ch_actual_dhz[ch] = clamped_dhz;
   }
 }
 
@@ -420,7 +420,7 @@ static void handle_frame(uint8_t cmd_id, const uint8_t* payload, uint16_t len) {
         if (g_state_mutex) xSemaphoreTake(g_state_mutex, portMAX_DELAY);
         g_ch[ch].enabled       = payload[1] != 0;
         g_ch[ch].waveform      = min<uint8_t>(payload[2], WAVE_NOISE);
-        memcpy(&g_ch[ch].freq_mhz, &payload[3], 4);
+        memcpy(&g_ch[ch].freq_dhz, &payload[3], 4);
         memcpy(&g_ch[ch].duty_permille, &payload[7], 2);
         memcpy(&g_ch[ch].amp_mv, &payload[9], 2);
         memcpy(&g_ch[ch].offset_mv, &payload[11], 2);
@@ -449,7 +449,7 @@ static void handle_frame(uint8_t cmd_id, const uint8_t* payload, uint16_t len) {
         g_sweep.duration_ms = constrain(g_sweep.duration_ms, 100u, 30000u);
         g_sweep.start_ms    = millis();
         g_sweep.finished    = false;
-        g_sweep.current_mhz = g_sweep.start_hz * 1000u;
+        g_sweep.current_dhz = g_sweep.start_hz * 10u;
         if (!g_sweep.enabled) {
           apply_channel_hw_locked(0, 0);
           sync_dds_timer_locked();
@@ -618,10 +618,13 @@ void loop() {
     } else {
       f_hz = (float)g_sweep.start_hz + ((float)g_sweep.stop_hz - (float)g_sweep.start_hz) * t;
     }
-    uint32_t target_mhz = (uint32_t)max(100.0f, f_hz * 1000.0f);
-    if (target_mhz != g_sweep.current_mhz) {
-      g_sweep.current_mhz = target_mhz;
-      apply_channel_hw_locked(0, target_mhz);
+    uint32_t target_dhz = (uint32_t)max(1.0f, f_hz * 10.0f);
+    if (!waveform_uses_hw_ledc(g_ch[0].waveform)) {
+      target_dhz = min<uint32_t>(target_dhz, 50000u);
+    }
+    if (target_dhz != g_sweep.current_dhz) {
+      g_sweep.current_dhz = target_dhz;
+      apply_channel_hw_locked(0, target_dhz);
       sync_dds_timer_locked();
     }
   }
