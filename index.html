@@ -4,12 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0b0e12" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="preload" href="./fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="./fonts/ibm-plex-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -17,6 +13,10 @@
     <meta
       name="description"
       content="Zero-install browser Dual-Channel Signal Generator PWA for Seeed Studio XIAO ESP32-S3 and XIAO ESP32-C6 via Web Serial &amp; WebUSB. Sine/Square/Triangle/Saw/PWM up to 20 MHz, frequency sweep, and 4-ch digital pattern generator."
+    />
+    <meta
+      name="keywords"
+      content="ESP32-S3 signal generator, ESP32-C6 PWM, XIAO DDS, Web Serial signal generator, WebUSB function generator, Rust WebAssembly signal generator, frequency sweep, pattern generator, esptool-js flasher, HotWire Signal Generator"
     />
     <meta name="author" content="Kari Vierimaa, Kempele" />
     <meta name="robots" content="index, follow" />
@@ -30,19 +30,60 @@
       property="og:description"
       content="Turn a $5 XIAO ESP32-S3 or C6 into a dual-channel function, PWM (up to 20 MHz), frequency sweep, and 4-channel digital pattern generator directly from your browser."
     />
+    <meta property="og:image" content="https://hotwire-lab.github.io/siggen/og-preview.png" />
+    <meta property="og:image:alt" content="HotWire Signal Generator dual-channel waveform preview and 4-channel pattern grid" />
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="HotWire Signal Generator — Dual-Ch DDS, PWM &amp; Pattern Gen" />
+    <meta
+      name="twitter:description"
+      content="Zero-install Rust/WASM Signal Generator PWA for Seeed Studio XIAO ESP32-S3 &amp; C6 with sweep, 4-ch pattern generator, and 1-click Web Flasher."
+    />
+    <meta name="twitter:image" content="https://hotwire-lab.github.io/siggen/og-preview.png" />
+
+    <!-- Structured Data for Search Engines -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "HotWire Signal Generator",
+        "operatingSystem": "Web, Windows, macOS, Linux, Android",
+        "applicationCategory": "UtilitiesApplication",
+        "url": "https://hotwire-lab.github.io/siggen/",
+        "screenshot": "https://hotwire-lab.github.io/siggen/og-preview.png",
+        "description": "Zero-install dual-channel DDS, hardware PWM, frequency sweep, and 4-channel pattern generator PWA for Seeed Studio XIAO ESP32-S3 and XIAO ESP32-C6 via Web Serial and WebUSB.",
+        "author": {
+          "@type": "Person",
+          "name": "Kari Vierimaa"
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
 
     <link rel="icon" type="image/svg+xml" href="./icon.svg" />
     <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icon-180.png" />
 
     <link data-trunk rel="css" href="styles.css" />
+    <link data-trunk rel="copy-dir" href="public/fonts" />
+    <link data-trunk rel="copy-dir" href="public/vendor" />
     <link data-trunk rel="copy-dir" href="public/firmware" />
     <link data-trunk rel="copy-file" href="public/icon.svg" />
+    <link data-trunk rel="copy-file" href="public/icon-180.png" />
+    <link data-trunk rel="copy-file" href="public/icon-192.png" />
+    <link data-trunk rel="copy-file" href="public/icon-512.png" />
     <link data-trunk rel="copy-file" href="public/manifest.webmanifest" />
+    <link data-trunk rel="copy-file" href="public/og-preview.png" />
     <link data-trunk rel="copy-file" href="public/robots.txt" />
     <link data-trunk rel="copy-file" href="public/sitemap.xml" />
     <link data-trunk rel="copy-file" href="public/sw.js" />
     <link data-trunk rel="copy-file" href="public/.nojekyll" />
-    <link data-trunk rel="rust" />
+    <link data-trunk rel="rust" data-wasm-opt="0" />
   </head>
   <body>
     <script>

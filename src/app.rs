@@ -1,6 +1,6 @@
-use hotwire_core::protocol::{BoardIdentity, FirmwareMismatch, ToolId};
-use hotwire_core::transport::HandshakeGuard;
+use hotwire_core::protocol::{FrameRule, ToolId};
 use hotwire_core::ui::{FirmwareMismatchModal, HotWireTheme};
+use hotwire_core::{use_hotwire_session, SessionConfig};
 use leptos::prelude::*;
 
 use crate::components::bottom_drawer::BottomDrawer;
@@ -12,21 +12,15 @@ use crate::components::waveform_preview::WaveformPreview;
 use crate::protocol::codec::{
     build_ch_cfg_frame, build_master_cmd, build_pattern_cfg_frame, build_sweep_cfg_frame,
 };
-use crate::protocol::demuxer::ProtocolDemuxer;
+use crate::protocol::demuxer::decode_status;
 use crate::protocol::types::{
-    ChannelConfig, DecodedFrame, PatternConfig, SigGenStatus, SweepConfig,
+    ChannelConfig, PatternConfig, SigGenStatus, SweepConfig, TYPE_SIGGEN_STATUS,
 };
-use crate::transport::serial::{create_siggen_transport, TransportSnapshot};
+use crate::transport::serial::create_siggen_transport;
 
 #[component]
 pub fn App() -> impl IntoView {
     let serial_transport = StoredValue::new_local(create_siggen_transport());
-
-    let transport = RwSignal::new(serial_transport.with_value(|t| t.snapshot()));
-    let identity = RwSignal::new(None::<BoardIdentity>);
-    let mismatch = RwSignal::new(None::<FirmwareMismatch>);
-    let flasher_mismatch = RwSignal::new(None::<FirmwareMismatch>);
-    let handshake_guard = StoredValue::new_local(HandshakeGuard::new(ToolId::SignalGenerator));
 
     let master_enabled = RwSignal::new(false);
     let ch1 = RwSignal::new(ChannelConfig::default_ch1());
@@ -36,8 +30,6 @@ pub fn App() -> impl IntoView {
     let status = RwSignal::new(SigGenStatus::default());
     let active_tab = RwSignal::new("waveforms".to_string());
     let drawer_open = RwSignal::new(false);
-
-    let demuxer = StoredValue::new_local(ProtocolDemuxer::new());
 
     let sync_all_to_device = move || {
         let mut batch = Vec::with_capacity(96);
@@ -49,71 +41,37 @@ pub fn App() -> impl IntoView {
         serial_transport.with_value(|t| t.send_bytes(&batch));
     };
 
-    serial_transport.with_value(|st| {
-        st.init(
-            move |snap: TransportSnapshot| {
-                let connected = snap.status.is_active();
-                let is_usb = snap.status.is_usb_connected();
-                let dev_name = snap.device_name.clone();
-                transport.set(snap);
-                if !connected {
-                    handshake_guard.update_value(|g| g.cancel());
-                    master_enabled.set(false);
-                    identity.set(None);
-                    status.set(SigGenStatus::default());
-                    demuxer.update_value(|d| d.reset());
-                } else if is_usb {
-                    mismatch.set(None);
-                    flasher_mismatch.set(None);
-                    handshake_guard.update_value(|g| {
-                        g.arm_timeout(dev_name, 5000, move |mm| {
-                            mismatch.set(Some(mm.clone()));
-                            flasher_mismatch.set(Some(mm));
-                            serial_transport.with_value(|t| t.disconnect());
-                        });
-                    });
-                } else {
-                    handshake_guard.update_value(|g| g.cancel());
-                    mismatch.set(None);
-                    flasher_mismatch.set(None);
+    let session = use_hotwire_session(
+        serial_transport.with_value(|t| t.clone()),
+        SessionConfig::new(
+            ToolId::SignalGenerator,
+            vec![FrameRule::new(TYPE_SIGGEN_STATUS, 12, 12)],
+        ),
+        move |_id, is_usb| {
+            if !is_usb {
+                master_enabled.set(true);
+            }
+            drawer_open.set(false);
+            sync_all_to_device();
+        },
+        move || {
+            master_enabled.set(false);
+            status.set(SigGenStatus::default());
+        },
+        move |frame_type, payload| {
+            if frame_type == TYPE_SIGGEN_STATUS {
+                if let Some(st) = decode_status(payload) {
+                    master_enabled.set(st.master_enabled);
+                    status.set(st);
                 }
-            },
-            move |bytes: &[u8]| {
-                demuxer.update_value(|d| {
-                    d.feed(bytes, |frame| match frame {
-                        DecodedFrame::Capabilities(id) => {
-                            serial_transport.with_value(|t| t.notify_handshake_ok());
-                            let is_usb = transport.get_untracked().status.is_usb_connected();
-                            if is_usb {
-                                let mut verdict = Ok(());
-                                handshake_guard.update_value(|g| {
-                                    verdict = g.verify(&id);
-                                });
-                                if let Err(mm) = verdict {
-                                    mismatch.set(Some(mm.clone()));
-                                    flasher_mismatch.set(Some(mm));
-                                    serial_transport.with_value(|t| t.disconnect());
-                                    return;
-                                }
-                            } else {
-                                handshake_guard.update_value(|g| g.cancel());
-                                master_enabled.set(true);
-                            }
-                            mismatch.set(None);
-                            flasher_mismatch.set(None);
-                            drawer_open.set(false);
-                            identity.set(Some(id));
-                            sync_all_to_device();
-                        }
-                        DecodedFrame::Status(st) => {
-                            status.set(st);
-                            master_enabled.set(st.master_enabled);
-                        }
-                    });
-                });
-            },
-        );
-    });
+            }
+        },
+        |_| {},
+    );
+    let transport = session.transport;
+    let identity = session.identity;
+    let mismatch = session.mismatch;
+    let flasher_mismatch = session.flasher_mismatch;
 
     let on_connect = Callback::new(move |_| serial_transport.with_value(|t| t.connect_usb()));
     let on_disconnect = Callback::new(move |_| {
@@ -156,7 +114,7 @@ pub fn App() -> impl IntoView {
 
     view! {
         <HotWireTheme />
-        <div class="siggen-app">
+        <div class="siggen-app hw-app">
             <TopToolbar
                 transport=transport
                 identity=identity

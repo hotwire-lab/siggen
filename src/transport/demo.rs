@@ -42,7 +42,7 @@ impl Default for SigGenDemoBackend {
 
 impl SigGenDemoBackend {
     fn build_caps(&self) -> Vec<u8> {
-        let json = br#"{"board":"XIAO-ESP32-S3 (Demo)","firmware":"1.1.0-siggen","siggen":true,"max_channels":2,"pattern_channels":4}"#;
+        let json = br#"{"board":"XIAO-ESP32-S3 (Demo)","firmware":"1.1.1-siggen","siggen":true,"max_channels":2,"pattern_channels":4}"#;
         encode_frame(TYPE_BOARD_CAPABILITIES, json)
     }
 
@@ -71,7 +71,8 @@ impl SigGenDemoBackend {
         if self.ch_enabled[1] {
             mask |= 2;
         }
-        let sw_active = self.master_enabled && self.ch_enabled[0] && self.sweep_enabled && !self.sweep_finished;
+        let sw_active =
+            self.master_enabled && self.ch_enabled[0] && self.sweep_enabled && !self.sweep_finished;
         let sw_dhz = if sw_active {
             self.current_sweep_dhz()
         } else {
@@ -157,8 +158,7 @@ impl DemoBackend for SigGenDemoBackend {
                 out.extend_from_slice(&self.handle_one_frame(cmd, &bytes[pos + 3..pos + 7]));
                 pos += 8;
             } else {
-                let payload_len =
-                    u16::from_le_bytes([bytes[pos + 3], bytes[pos + 4]]) as usize;
+                let payload_len = u16::from_le_bytes([bytes[pos + 3], bytes[pos + 4]]) as usize;
                 let end = pos + 6 + payload_len;
                 if end > bytes.len() {
                     break;

@@ -1,6 +1,4 @@
-pub use hotwire_core::transport::{
-    HotWireTransport as SerialTransport, SerialConfig, TransportSnapshot,
-};
+pub use hotwire_core::transport::{HotWireTransport as SerialTransport, SerialConfig};
 
 use crate::transport::demo::SigGenDemoBackend;
 

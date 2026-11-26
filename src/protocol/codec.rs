@@ -8,7 +8,9 @@ use crate::protocol::types::{
 pub fn build_ch_cfg_frame(ch: u8, cfg: &ChannelConfig) -> Vec<u8> {
     // The wire format uses decihertz so both 0.1 Hz DDS resolution and the
     // full 20 MHz LEDC range fit in a single u32 (20 MHz = 200_000_000 dHz).
-    let freq_dhz = (cfg.clamped_freq_hz() * 10.0).round().clamp(1.0, u32::MAX as f64) as u32;
+    let freq_dhz = (cfg.clamped_freq_hz() * 10.0)
+        .round()
+        .clamp(1.0, u32::MAX as f64) as u32;
     let duty = cfg.duty_permille.clamp(5, 995);
     let amp = cfg.amp_mv.min(3300);
     let offset = cfg.offset_mv.min(3300);

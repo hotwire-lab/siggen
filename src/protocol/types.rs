@@ -1,5 +1,3 @@
-use hotwire_core::protocol::BoardIdentity;
-
 pub const CMD_SIGGEN_CH_CFG: u8 = 0x50;
 pub const CMD_SIGGEN_SWEEP_CFG: u8 = 0x51;
 pub const CMD_SIGGEN_PAT_CFG: u8 = 0x52;
@@ -229,20 +227,4 @@ pub struct SigGenStatus {
     pub actual_ch1_dhz: u32,
 }
 
-#[derive(Debug, Clone)]
-pub enum DecodedFrame {
-    Capabilities(BoardIdentity),
-    Status(SigGenStatus),
-}
-
-pub fn format_freq_hz(hz: f64) -> String {
-    if hz >= 1_000_000.0 {
-        format!("{:.3} MHz", hz / 1_000_000.0)
-    } else if hz >= 1_000.0 {
-        format!("{:.2} kHz", hz / 1_000.0)
-    } else if hz >= 10.0 {
-        format!("{:.1} Hz", hz)
-    } else {
-        format!("{:.2} Hz", hz)
-    }
-}
+pub use hotwire_core::format::format_siggen_frequency as format_freq_hz;

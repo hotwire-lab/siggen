@@ -19,7 +19,6 @@ pub fn SweepPanel(
     status: RwSignal<SigGenStatus>,
     on_change: Callback<SweepConfig>,
 ) -> impl IntoView {
-
     view! {
         <section class="siggen-card siggen-wide-card" style="--ch-accent: #f0b429;">
             <div class="siggen-card-head">

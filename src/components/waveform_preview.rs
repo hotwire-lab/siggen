@@ -83,9 +83,7 @@ pub fn WaveformPreview(
         let rect = canvas.get_bounding_client_rect();
         let css_w = rect.width().max(260.0);
         let css_h = rect.height().max(150.0);
-        let dpr = web_sys::window()
-            .map(|w| w.device_pixel_ratio().clamp(1.0, 2.5))
-            .unwrap_or(1.0);
+        let dpr = hotwire_core::web::capped_device_pixel_ratio();
         let tw = (css_w * dpr).round() as u32;
         let th = (css_h * dpr).round() as u32;
         if canvas.width() != tw || canvas.height() != th {
@@ -157,7 +155,11 @@ pub fn WaveformPreview(
             if !cfg.enabled {
                 return;
             }
-            let alpha_stroke = if master { color } else { "rgba(148, 163, 184, 0.32)" };
+            let alpha_stroke = if master {
+                color
+            } else {
+                "rgba(148, 163, 184, 0.32)"
+            };
             ctx.save();
             ctx.set_stroke_style_str(alpha_stroke);
             ctx.set_line_width(if master { 2.0 } else { 1.2 });
@@ -192,33 +194,62 @@ pub fn WaveformPreview(
         ctx.set_font("600 10.5px 'IBM Plex Mono', monospace");
         ctx.set_fill_style_str(if master { "#fb7185" } else { "#7d8796" });
         let ch1_hud = if c1.enabled {
-            let mode_tag = if c1.waveform.uses_hw_ledc() { "LEDC" } else { "DDS" };
+            let mode_tag = if c1.waveform.uses_hw_ledc() {
+                "LEDC"
+            } else {
+                "DDS"
+            };
             let sw_tag = if sw.enabled { " SWEEP" } else { "" };
-            format!("CH1(D0): {} {} [{}{}]", c1.waveform.label(), format_freq_hz(eff_c1_hz), mode_tag, sw_tag)
+            format!(
+                "CH1(D0): {} {} [{}{}]",
+                c1.waveform.label(),
+                format_freq_hz(eff_c1_hz),
+                mode_tag,
+                sw_tag
+            )
         } else {
             "CH1(D0): OFF".to_string()
         };
         let _ = ctx.fill_text(&ch1_hud, pad_l + 2.0, pad_t - 7.0);
 
         let ch2_hud = if c2.enabled {
-            format!("CH2(D1): {} {}", c2.waveform.label(), format_freq_hz(c2.clamped_freq_hz()))
+            format!(
+                "CH2(D1): {} {}",
+                c2.waveform.label(),
+                format_freq_hz(c2.clamped_freq_hz())
+            )
         } else if pat.enabled {
-            format!("PAT(D2-D5): {} steps @ {}", pat.step_count, format_freq_hz(pat.rate_hz as f64))
+            format!(
+                "PAT(D2-D5): {} steps @ {}",
+                pat.step_count,
+                format_freq_hz(pat.rate_hz as f64)
+            )
         } else {
             "CH2(D1): OFF".to_string()
         };
-        ctx.set_fill_style_str(if master && (c2.enabled || pat.enabled) { "#38bdf8" } else { "#7d8796" });
-        let tw = ctx.measure_text(&ch2_hud).map(|m| m.width()).unwrap_or(140.0);
+        ctx.set_fill_style_str(if master && (c2.enabled || pat.enabled) {
+            "#38bdf8"
+        } else {
+            "#7d8796"
+        });
+        let tw = ctx
+            .measure_text(&ch2_hud)
+            .map(|m| m.width())
+            .unwrap_or(140.0);
         let _ = ctx.fill_text(&ch2_hud, pad_l + plot_w - tw, pad_t - 7.0);
 
         // Bottom timebase + RC filter hint
         ctx.set_font("10px 'IBM Plex Mono', monospace");
         ctx.set_fill_style_str("#7d8796");
-        let any_dds = (c1.enabled && !c1.waveform.uses_hw_ledc()) || (c2.enabled && !c2.waveform.uses_hw_ledc());
+        let any_dds = (c1.enabled && !c1.waveform.uses_hw_ledc())
+            || (c2.enabled && !c2.waveform.uses_hw_ledc());
         let footer = if any_dds {
             format!("Window: {:.2} ms · DDS uses 312.5 kHz PWM carrier (add 1kΩ + 10nF RC LPF for smooth analog)", window_sec * 1000.0)
         } else {
-            format!("Window: {:.3} ms · Native hardware LEDC 3.3 V CMOS output", window_sec * 1000.0)
+            format!(
+                "Window: {:.3} ms · Native hardware LEDC 3.3 V CMOS output",
+                window_sec * 1000.0
+            )
         };
         let _ = ctx.fill_text(&footer, pad_l + 2.0, pad_t + plot_h + 14.0);
     });

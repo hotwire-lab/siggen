@@ -6,16 +6,7 @@ use leptos::prelude::*;
 use crate::transport::serial::SerialTransport;
 
 fn siggen_firmware_profiles() -> Vec<FirmwareProfile> {
-    vec![
-        FirmwareProfile::xiao_esp32s3(
-            "HotWire_SigGen_XIAO_ESP32S3.ino",
-            "CH1=D0 (GPIO1), CH2=D1 (GPIO2), Pattern=D2–D5 (GPIO3–6). HW LEDC up to 20 MHz + 312.5 kHz PWM-DAC DDS.",
-        ),
-        FirmwareProfile::xiao_esp32c6(
-            "HotWire_SigGen_XIAO_ESP32C6.ino",
-            "CH1=D0 (GPIO0), CH2=D1 (GPIO1), Pattern=D2–D5 (GPIO2, 21–23). HW LEDC up to 20 MHz + 312.5 kHz PWM-DAC DDS.",
-        ),
-    ]
+    FirmwareProfile::standard_profiles(ToolId::SignalGenerator)
 }
 
 #[component]

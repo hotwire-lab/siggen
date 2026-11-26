@@ -1,79 +1,27 @@
-use hotwire_core::protocol::{BoardIdentity, FrameDemuxer, FrameRule, TYPE_BOARD_CAPABILITIES};
+use crate::protocol::types::SigGenStatus;
 
-use crate::protocol::types::{DecodedFrame, SigGenStatus, TYPE_SIGGEN_STATUS};
-
-pub struct ProtocolDemuxer {
-    inner: FrameDemuxer,
-}
-
-impl Default for ProtocolDemuxer {
-    fn default() -> Self {
-        Self::new()
+/// Decodes the fixed 12-byte `TYPE_SIGGEN_STATUS` payload.
+pub fn decode_status(payload: &[u8]) -> Option<SigGenStatus> {
+    if payload.len() != 12 {
+        return None;
     }
-}
-
-impl ProtocolDemuxer {
-    pub fn new() -> Self {
-        Self {
-            inner: FrameDemuxer::new(vec![
-                FrameRule::board_capabilities(),
-                FrameRule::new(TYPE_SIGGEN_STATUS, 12, 12),
-            ]),
-        }
-    }
-
-    pub fn reset(&mut self) {
-        self.inner.reset();
-    }
-
-    pub fn feed<F>(&mut self, chunk: &[u8], mut on_frame: F)
-    where
-        F: FnMut(DecodedFrame),
-    {
-        self.inner.feed(chunk, |raw| match raw.type_id {
-            TYPE_BOARD_CAPABILITIES => {
-                if let Some(id) = BoardIdentity::decode_capabilities(raw.payload) {
-                    on_frame(DecodedFrame::Capabilities(id));
-                }
-            }
-            TYPE_SIGGEN_STATUS if raw.payload.len() == 12 => {
-                let status = SigGenStatus {
-                    master_enabled: raw.payload[0] != 0,
-                    ch_mask: raw.payload[1],
-                    sweep_active: raw.payload[2] != 0,
-                    pattern_active: raw.payload[3] != 0,
-                    sweep_freq_dhz: u32::from_le_bytes([
-                        raw.payload[4],
-                        raw.payload[5],
-                        raw.payload[6],
-                        raw.payload[7],
-                    ]),
-                    actual_ch1_dhz: u32::from_le_bytes([
-                        raw.payload[8],
-                        raw.payload[9],
-                        raw.payload[10],
-                        raw.payload[11],
-                    ]),
-                };
-                on_frame(DecodedFrame::Status(status));
-            }
-            _ => {}
-        });
-    }
+    Some(SigGenStatus {
+        master_enabled: payload[0] != 0,
+        ch_mask: payload[1],
+        sweep_active: payload[2] != 0,
+        pattern_active: payload[3] != 0,
+        sweep_freq_dhz: u32::from_le_bytes([payload[4], payload[5], payload[6], payload[7]]),
+        actual_ch1_dhz: u32::from_le_bytes([payload[8], payload[9], payload[10], payload[11]]),
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hotwire_core::protocol::encode_frame;
+    use hotwire_core::protocol::{encode_frame, TYPE_BOARD_CAPABILITIES};
 
     #[test]
-    fn decodes_status_and_capabilities_frames() {
-        let mut demux = ProtocolDemuxer::new();
-        let caps = encode_frame(
-            TYPE_BOARD_CAPABILITIES,
-            br#"{"board":"XIAO-ESP32-S3","firmware":"1.0.0-siggen","siggen":true}"#,
-        );
+    fn decodes_status_payload() {
         let mut payload = [0u8; 12];
         payload[0] = 1;
         payload[1] = 0x03;
@@ -81,25 +29,17 @@ mod tests {
         payload[3] = 0;
         payload[4..8].copy_from_slice(&1_500_000u32.to_le_bytes());
         payload[8..12].copy_from_slice(&1_000_000u32.to_le_bytes());
-        let st = encode_frame(TYPE_SIGGEN_STATUS, &payload);
+        let st = decode_status(&payload).expect("status");
+        assert!(st.master_enabled);
+        assert_eq!(st.ch_mask, 0x03);
+        assert_eq!(st.sweep_freq_dhz, 1_500_000);
+        assert_eq!(st.actual_ch1_dhz, 1_000_000);
 
-        let mut stream = Vec::new();
-        stream.extend_from_slice(&caps);
-        stream.extend_from_slice(&st);
-
-        let mut got_caps = false;
-        let mut got_status = None;
-        demux.feed(&stream, |f| match f {
-            DecodedFrame::Capabilities(id) => {
-                assert_eq!(id.board, "XIAO-ESP32-S3");
-                got_caps = true;
-            }
-            DecodedFrame::Status(s) => got_status = Some(s),
-        });
-        assert!(got_caps);
-        let s = got_status.expect("status");
-        assert!(s.master_enabled);
-        assert_eq!(s.ch_mask, 0x03);
-        assert_eq!(s.sweep_freq_dhz, 1_500_000);
+        let caps = encode_frame(
+            TYPE_BOARD_CAPABILITIES,
+            br#"{"schema":2,"tool":"siggen","board":"XIAO-ESP32-S3","firmware":"1.1.0-siggen","siggen":true}"#,
+        );
+        assert_eq!(caps[2], TYPE_BOARD_CAPABILITIES);
+        assert_eq!(decode_status(&caps), None);
     }
 }

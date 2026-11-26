@@ -18,7 +18,6 @@ pub fn PatternPanel(
     pattern: RwSignal<PatternConfig>,
     on_change: Callback<PatternConfig>,
 ) -> impl IntoView {
-
     let apply_preset = move |preset: PatternConfig| {
         pattern.set(preset);
         on_change.run(preset);

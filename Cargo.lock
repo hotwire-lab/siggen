@@ -459,8 +459,8 @@ checksum = "735eaa21a6a5ffb2e84362faaeb90c05ba8e19797ca30428478cb6ea3a4921bc"
 
 [[package]]
 name = "hotwire-core"
-version = "0.5.1"
-source = "git+https://github.com/hotwire-lab/hotwire-core?tag=v0.5.1#0c44dfed4a93f457164961e01f59acfb3cdafdf0"
+version = "0.6.0"
+source = "git+https://github.com/hotwire-lab/hotwire-core?tag=v0.6.0#b2d2004617ca7dbf649fe74efcb14f1d3a02680a"
 dependencies = [
  "js-sys",
  "leptos",
@@ -473,7 +473,7 @@ dependencies = [
 
 [[package]]
 name = "hotwire-signal-generator"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "console_error_panic_hook",
  "hotwire-core",

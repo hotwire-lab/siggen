@@ -29,6 +29,7 @@ pub fn TopToolbar(
             on_start_demo=on_start_demo
             flasher_open=Signal::derive(move || drawer_open.get())
             on_toggle_flasher=on_toggle_drawer
+            app_version=env!("CARGO_PKG_VERSION")
         >
             <button
                 type="button"

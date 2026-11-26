@@ -27,12 +27,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "hotwire_protocol.h"
 
 #ifndef CONFIG_IDF_TARGET_ESP32C6
   #error "This sketch targets Seeed Studio XIAO ESP32-C6."
 #endif
 
-#define HOTWIRE_FW_VERSION "1.1.0-siggen-c6"
+#define HOTWIRE_FW_VERSION "1.1.1-siggen-c6"
 #define HOTWIRE_BOARD_NAME "XIAO-ESP32-C6"
 
 static const int CH_PINS[2]  = { 0, 1 };            // D0, D1
@@ -157,7 +158,7 @@ static void send_frame(uint8_t type_id, const uint8_t* payload, uint16_t len) {
 static void send_capabilities() {
   const char* json =
     "{\"board\":\"" HOTWIRE_BOARD_NAME "\","
-    "\"firmware\":\"" HOTWIRE_FW_VERSION "\","
+    "\"firmware\":\"" HOTWIRE_FW_VERSION "\",\"schema\":2,\"tool\":\"siggen\","
     "\"siggen\":true,\"max_channels\":2,\"pattern_channels\":4,"
     "\"max_pwm_hz\":20000000,\"dds_rate_hz\":20000}";
   send_frame(TYPE_BOARD_CAPS, (const uint8_t*)json, (uint16_t)strlen(json));
@@ -470,7 +471,7 @@ static void handle_frame(uint8_t cmd_id, const uint8_t* payload, uint16_t len) {
       break;
 
     case CMD_BOOTLOADER:
-      if (len >= 4 && payload[0] == 0xB0 && payload[1] == 0x07 && payload[2] == 0x10 && payload[3] == 0xAD) {
+      if (len >= 4 && hotwire_is_bootloader_magic(payload[0], payload[1], payload[2], payload[3])) {
         g_master_en = false;
         stop_channel_hw(0);
         stop_channel_hw(1);

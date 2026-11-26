@@ -1,0 +1,11 @@
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.wasm binary
+*.woff2 binary
+*.ino.bin binary
+*.bootloader.bin binary
+*.partitions.bin binary
