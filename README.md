@@ -11,7 +11,7 @@ Dual-channel DDS waveform, hardware LEDC Square/PWM (up to 20 MHz), frequency sw
 * **Live App:** https://hotwire-lab.github.io/siggen/
 * **Repository:** https://github.com/hotwire-lab/siggen
 * **Suite Home:** https://hotwire-lab.github.io/
-* **Stack:** Rust + WebAssembly (Leptos 0.7 CSR + Trunk + `hotwire-core`)
+* **Stack:** Rust + WebAssembly (Leptos 0.7 CSR + Trunk + `hotwire-core v0.6.0`)
 
 > **Try it in 1 click (no hardware required):** Open **[https://hotwire-lab.github.io/siggen/](https://hotwire-lab.github.io/siggen/)** and click **Demo** to explore both waveform channels, sweep, and the pattern generator offline.
 
@@ -45,7 +45,7 @@ Dual-channel DDS waveform, hardware LEDC Square/PWM (up to 20 MHz), frequency sw
 * **XIAO ESP32-S3 Sketch:** [`firmware/HotWire_SigGen_XIAO_ESP32S3/HotWire_SigGen_XIAO_ESP32S3.ino`](firmware/HotWire_SigGen_XIAO_ESP32S3/HotWire_SigGen_XIAO_ESP32S3.ino)
   * FQBN: `esp32:esp32:XIAO_ESP32S3:USBMode=hwcdc,CDCOnBoot=default`
 * **XIAO ESP32-C6 Sketch:** [`firmware/HotWire_SigGen_XIAO_ESP32C6/HotWire_SigGen_XIAO_ESP32C6.ino`](firmware/HotWire_SigGen_XIAO_ESP32C6/HotWire_SigGen_XIAO_ESP32C6.ino)
-  * FQBN: `esp32:esp32:XIAO_ESP32C6:USBMode=hwcdc,CDCOnBoot=default`
+  * FQBN: `esp32:esp32:XIAO_ESP32C6:CDCOnBoot=cdc`
 * Firmware version: **`v1.1.1+`** (bundled binaries live in [`public/firmware/`](public/firmware/)).
 
 ## HotWire Ecosystem
